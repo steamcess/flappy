@@ -193,9 +193,9 @@ let pipes=[]; // {x, gapY, gapH, w, passed}
 const pipeConf = {
   w: 96,
   speed: 230, // px/s
-  spawnEvery: 1.25, // detik
-  minGap: 200,
-  maxGap: 300
+  spawnEvery: 1.625, // detik (1.25 + 30%)
+  minGap: 240, // 200 + 20%
+  maxGap: 360  // 300 + 20%
 };
 let spawnTimer = 0;
 
