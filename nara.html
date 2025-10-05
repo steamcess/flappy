@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="id">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Nara Flappy — Dengan Kuis Perkalian</title>
+        <style>
+            :root {
+                --bg1: #ff6b6b;
+                --bg2: #ffd93d;
+                --accent: #ffffff;
+                --accent2: #ff8c42;
+                --good: #22c55e;
+                --danger: #dc2626;
+                --text: #2d3436;
+                --muted: #636e72;
+                --glass: rgba(255, 255, 255, 0.7);
+                --glass-stroke: rgba(255, 255, 255, 0.9);
+                --shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+                --pipe: #22c55e;
+                --pipe2: #16a34a;
+                --ground: #8b7355;
+            }
+            * {
+                box-sizing: border-box;
+            }
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                background: linear-gradient(135deg, var(--bg1), var(--bg2));
+                color: var(--text);
+                font-family:
+                    Inter,
+                    system-ui,
+                    -apple-system,
+                    Segoe UI,
+                    Roboto,
+                    Ubuntu,
+                    Cantarell,
+                    "Helvetica Neue",
+                    Arial,
+                    "Noto Sans",
+                    "Liberation Sans",
+                    sans-serif;
+            }
+            .container {
+                position: relative;
+                height: 100%;
+                display: grid;
+                place-items: center;
+                overflow: hidden;
+            }
+            canvas {
+                display: block;
+                width: min(92vw, 700px);
+                height: auto;
+                aspect-ratio: 9/16;
+                border-radius: 18px;
+                box-shadow: var(--shadow);
+                background: radial-gradient(
+                    120% 120% at 100% 0%,
+                    #ff6b6b 0%,
+                    #ffd93d 60%,
+                    #eea849 100%
+                );
+            }
+            .hud {
+                position: absolute;
+                top: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 10px;
+                align-items: center;
+                padding: 8px 12px;
+                background: linear-gradient(
+                    180deg,
+                    rgba(255, 255, 255, 0.9),
+                    rgba(255, 255, 255, 0.7)
+                );
+                border: 1px solid var(--glass-stroke);
+                border-radius: 999px;
+                backdrop-filter: blur(10px) saturate(140%);
+                -webkit-backdrop-filter: blur(10px) saturate(140%);
+                box-shadow: var(--shadow);
+            }
+            .tag {
+                padding: 6px 12px;
+                border-radius: 999px;
+                font-weight: 600;
+                letter-spacing: 0.3px;
+                background: rgba(255, 255, 255, 0.5);
+                border: 1px solid rgba(255, 255, 255, 0.8);
+            }
+            .tag.score {
+                background: rgba(255, 107, 107, 0.3);
+                border: 1px solid rgba(255, 107, 107, 0.5);
+            }
+            .tag.best {
+                background: rgba(46, 213, 115, 0.3);
+                border: 1px solid rgba(46, 213, 115, 0.5);
+            }
+            .controls {
+                position: absolute;
+                bottom: 16px;
+                left: 50%;
+                transform: translateX(-50%);
+                display: flex;
+                gap: 10px;
+                padding: 10px 12px;
+                background: var(--glass);
+                border: 1px solid var(--glass-stroke);
+                border-radius: 12px;
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                color: var(--muted);
+                font-size: 12px;
+            }
+            .btn {
+                appearance: none;
+                border: 0;
+                background: linear-gradient(180deg, #ff8c42, #ff6b6b);
+                color: white;
+                padding: 10px 14px;
+                border-radius: 10px;
+                font-weight: 700;
+                cursor: pointer;
+                box-shadow:
+                    0 6px 16px rgba(255, 140, 66, 0.4),
+                    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+                transition:
+                    transform 0.08s ease,
+                    filter 0.2s ease;
+            }
+            .btn:active {
+                transform: translateY(1px) scale(0.99);
+                filter: brightness(0.95);
+            }
+            .btn:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+            .overlay {
+                position: absolute;
+                inset: 0;
+                display: grid;
+                place-items: center;
+                padding: 24px;
+                background: radial-gradient(
+                    120% 120% at 50% 0%,
+                    rgba(255, 255, 255, 0.2),
+                    rgba(0, 0, 0, 0.4)
+                );
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            .overlay.show {
+                opacity: 1;
+                pointer-events: auto;
+            }
+            .card {
+                width: min(90vw, 420px);
+                background: rgba(255, 255, 255, 0.85);
+                border: 1px solid var(--glass-stroke);
+                border-radius: 16px;
+                padding: 24px;
+                box-shadow: var(--shadow);
+                text-align: center;
+                backdrop-filter: blur(14px) saturate(140%);
+                -webkit-backdrop-filter: blur(14px) saturate(140%);
+            }
+            .card h1 {
+                margin: 0 0 8px;
+                font-size: clamp(20px, 3.8vw, 28px);
+                background: linear-gradient(135deg, #ff6b6b, #ffd93d);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+            }
+            .card p {
+                margin: 6px 0 18px;
+                color: var(--muted);
+            }
+            .actions {
+                display: flex;
+                gap: 12px;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            .small {
+                font-size: 12px;
+                color: var(--muted);
+                margin-top: 10px;
+            }
+            .badge {
+                display: inline-block;
+                padding: 4px 8px;
+                border-radius: 999px;
+                font-weight: 700;
+                color: white;
+                background: linear-gradient(90deg, #ff6b6b, #ff8c42);
+            }
+            .hidden {
+                display: none;
+            }
+            .quiz-question {
+                font-size: clamp(32px, 6vw, 56px);
+                font-weight: 800;
+                color: #ff6b6b;
+                margin: 20px 0;
+                padding: 24px;
+                background: linear-gradient(
+                    135deg,
+                    rgba(255, 107, 107, 0.1),
+                    rgba(255, 217, 61, 0.1)
+                );
+                border-radius: 16px;
+                border: 3px solid var(--glass-stroke);
+                text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            }
+            .quiz-input {
+                width: 100%;
+                padding: 14px 18px;
+                font-size: 20px;
+                border: 3px solid var(--glass-stroke);
+                border-radius: 12px;
+                background: rgba(255, 255, 255, 0.9);
+                color: var(--text);
+                text-align: center;
+                margin-bottom: 16px;
+                font-weight: 600;
+            }
+            .quiz-input:focus {
+                outline: none;
+                border-color: #ff6b6b;
+                background: rgba(255, 255, 255, 1);
+                transform: scale(1.02);
+                transition: all 0.2s ease;
+            }
+            .quiz-feedback {
+                padding: 10px 14px;
+                border-radius: 10px;
+                margin: 12px 0;
+                font-weight: 600;
+                transition: all 0.3s ease;
+                font-size: 14px;
+            }
+            .quiz-feedback.correct {
+                background: linear-gradient(
+                    135deg,
+                    rgba(34, 197, 94, 0.2),
+                    rgba(16, 185, 129, 0.2)
+                );
+                color: var(--good);
+                border: 2px solid rgba(34, 197, 94, 0.4);
+            }
+            .quiz-feedback.wrong {
+                background: linear-gradient(
+                    135deg,
+                    rgba(220, 38, 38, 0.2),
+                    rgba(239, 68, 68, 0.2)
+                );
+                color: var(--danger);
+                border: 2px solid rgba(220, 38, 38, 0.4);
+            }
+            @media (hover: none) and (pointer: coarse) {
+                .controls {
+                    font-size: 14px;
+                }
+                .btn {
+                    padding: 12px 16px;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <canvas
+                id="game"
+                width="720"
+                height="1280"
+                aria-label="Flappy-like Game with Multiplication Quiz"
+            ></canvas>
+
+            <div class="hud">
+                <div class="tag score">Skor: <span id="score">0</span></div>
+                <div class="tag best">Tertinggi: <span id="best">0</span></div>
+                <button class="btn" id="restartBtn" title="Mulai Ulang">
+                    Ulang
+                </button>
+            </div>
+
+            <div class="controls">
+                Tap/klik atau tekan Spasi untuk terbang • R untuk ulang • P
+                untuk jeda
+            </div>
+
+            <div class="overlay show" id="startOverlay">
+                <div class="card">
+                    <h1>Nara Flappy</h1>
+                    <p>
+                        Game Flappy Bird dengan kuis perkalian! Jawab soal
+                        perkalian 1 digit dengan benar untuk memulai permainan!
+                    </p>
+                    <div class="actions">
+                        <button class="btn" id="startQuizBtn">
+                            Mulai Kuis
+                        </button>
+                        <button class="btn" id="howBtn">Cara Main</button>
+                    </div>
+                    <div class="small">
+                        Belajar perkalian sambil bermain! 🎯×✨
+                    </div>
+                </div>
+            </div>
+
+            <div class="overlay" id="quizOverlay">
+                <div class="card">
+                    <h1>Perkalian Cepat! 🎯</h1>
+                    <p>Jawab perkalian 1 digit dengan benar untuk mulai! 🚀</p>
+                    <div class="quiz-question" id="quizQuestion">3 × 4 = ?</div>
+                    <input
+                        type="number"
+                        class="quiz-input"
+                        id="quizAnswer"
+                        placeholder="Masukkan jawaban"
+                        autocomplete="off"
+                    />
+                    <div id="quizFeedback" class="quiz-feedback hidden"></div>
+                    <div class="actions">
+                        <button class="btn" id="submitAnswerBtn">Jawab</button>
+                        <button class="btn" id="skipQuizBtn">Lewati</button>
+                    </div>
+                    <div class="small">
+                        💡 Tip: Latih table perkalianmu! Tekan Enter untuk
+                        cepat!
+                    </div>
+                </div>
+            </div>
+
+            <div class="overlay" id="howOverlay">
+                <div class="card">
+                    <h1>Cara Main</h1>
+                    <p>
+                        Lewati celah pipa sebanyak mungkin tanpa menyentuh pipa
+                        atau tanah. Setiap celah yang dilewati menambah 1 skor.
+                    </p>
+                    <p>
+                        <strong>Kuis Perkalian:</strong> Jawab soal perkalian 1
+                        digit × 1 digit (contoh: 3×4=12, 7×8=56) dengan benar
+                        untuk memulai game.
+                    </p>
+                    <div class="actions">
+                        <button class="btn" id="backBtn">Oke, Paham</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="overlay" id="gameOverOverlay">
+                <div class="card">
+                    <h1>Game Over!</h1>
+                    <p>
+                        Skor: <span id="finalScore">0</span> • Tertinggi:
+                        <span id="finalBest">0</span>
+                    </p>
+                    <div class="actions">
+                        <button class="btn" id="playAgainBtn">Main Lagi</button>
+                    </div>
+                    <div class="small">Tekan R untuk ulang cepat.</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            /* ====== Setup dasar ====== */
+            const canvas = document.getElementById("game");
+            const ctx = canvas.getContext("2d");
+
+            const W = canvas.width;
+            const H = canvas.height;
+            const GROUND_H = 96; // tinggi tanah
+
+            const scoreEl = document.getElementById("score");
+            const bestEl = document.getElementById("best");
+            const restartBtn = document.getElementById("restartBtn");
+
+            const startOverlay = document.getElementById("startOverlay");
+            const quizOverlay = document.getElementById("quizOverlay");
+            const howOverlay = document.getElementById("howOverlay");
+            const gameOverOverlay = document.getElementById("gameOverOverlay");
+            const startBtn = document.getElementById("startQuizBtn");
+            const howBtn = document.getElementById("howBtn");
+            const backBtn = document.getElementById("backBtn");
+            const playAgainBtn = document.getElementById("playAgainBtn");
+            const finalScoreEl = document.getElementById("finalScore");
+            const finalBestEl = document.getElementById("finalBest");
+
+            // Quiz elements
+            const quizQuestion = document.getElementById("quizQuestion");
+            const quizAnswer = document.getElementById("quizAnswer");
+            const quizFeedback = document.getElementById("quizFeedback");
+            const submitAnswerBtn = document.getElementById("submitAnswerBtn");
+            const skipQuizBtn = document.getElementById("skipQuizBtn");
+
+            let running = false,
+                started = false,
+                paused = false,
+                gameOver = false;
+            let last = performance.now();
+            let score = 0;
+            let best =
+                parseInt(localStorage.getItem("naraflappy_best") || "0", 10) ||
+                0;
+            bestEl.textContent = best;
+
+            // Quiz variables
+            let currentQuiz = null;
+            let quizAttempts = 0;
+
+            const audioCtx =
+                window.AudioContext || window.webkitAudioContext
+                    ? new (window.AudioContext || window.webkitAudioContext)()
+                    : null;
+            let audioEnabled = false;
+            function enableAudio() {
+                if (audioCtx && audioCtx.state !== "running") {
+                    audioCtx.resume().catch(() => {});
+                }
+                audioEnabled = true;
+            }
+            function beep(type = "sine", freq = 880, dur = 0.06, vol = 0.06) {
+                if (!audioEnabled || !audioCtx) return;
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.type = type;
+                o.frequency.value = freq;
+                g.gain.value = vol;
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.start();
+                o.stop(audioCtx.currentTime + dur);
+            }
+
+            const rand = (a, b) => Math.random() * (b - a) + a;
+            const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+            /* ====== Kuis Perkalian ====== */
+            function generateKuis() {
+                const num1 = Math.floor(Math.random() * 10) + 1; // 1-10
+                const num2 = Math.floor(Math.random() * 10) + 1; // 1-10
+
+                // Hindari hasil yang terlalu mudah (1x1, 1x2, 2x1)
+                if ((num1 === 1 && num2 <= 3) || (num2 === 1 && num1 <= 3)) {
+                    return generateKuis();
+                }
+
+                const answer = num1 * num2;
+                const questionText = `${num1} × ${num2} = ?`;
+
+                currentQuiz = {
+                    question: questionText,
+                    answer: answer,
+                    num1: num1,
+                    num2: num2,
+                };
+
+                quizQuestion.textContent = questionText;
+                quizAnswer.value = "";
+                hideFeedback();
+            }
+
+            function showQuiz() {
+                startOverlay.classList.remove("show");
+                howOverlay.classList.remove("show");
+                gameOverOverlay.classList.remove("show");
+                quizOverlay.classList.add("show");
+                quizAttempts = 0;
+                generateKuis();
+                quizAnswer.focus();
+            }
+
+            function hideQuiz() {
+                quizOverlay.classList.remove("show");
+            }
+
+            function showFeedback(isCorrect, message) {
+                quizFeedback.textContent = message;
+                quizFeedback.className = `quiz-feedback ${isCorrect ? "correct" : "wrong"}`;
+                quizFeedback.classList.remove("hidden");
+
+                if (isCorrect) {
+                    // Mainkan nada sukses yang lebih meriah
+                    beep("sine", 1047, 0.15, 0.1); // C6
+                    setTimeout(() => beep("sine", 1319, 0.15, 0.08), 100); // E6
+                    setTimeout(() => beep("sine", 1568, 0.2, 0.1), 200); // G6
+
+                    setTimeout(() => {
+                        hideQuiz();
+                        startGame();
+                    }, 1200);
+                } else {
+                    // Mainkan nada error
+                    beep("sawtooth", 220, 0.2, 0.06);
+                    quizAttempts++;
+
+                    let hintText;
+                    if (quizAttempts >= 3) {
+                        // Berikan petunjuk berdasarkan table perkalian
+                        if (currentQuiz.num1 <= 5 && currentQuiz.num2 <= 5) {
+                            hintText = `Petunjuk: ${currentQuiz.num1} × ${currentQuiz.num2} = ${currentQuiz.num1} ditambah ${currentQuiz.num1} sebanyak ${currentQuiz.num2} kali`;
+                        } else {
+                            hintText = `Petunjuk: Coba hitung pelan-pelan! ${currentQuiz.num1} × ${currentQuiz.num2}...`;
+                        }
+                    } else if (quizAttempts === 2) {
+                        hintText = `Salah! Fokus pada table ${currentQuiz.num1} atau ${currentQuiz.num2}!`;
+                    } else {
+                        hintText = "Salah! Coba lagi dengan lebih hati-hati!";
+                    }
+
+                    showFeedback(false, hintText);
+                    setTimeout(() => {
+                        if (quizAttempts < 3) {
+                            generateKuis();
+                        }
+                        quizAnswer.focus();
+                    }, 2000);
+                }
+            }
+
+            function hideFeedback() {
+                quizFeedback.classList.add("hidden");
+            }
+
+            function checkAnswer() {
+                const userAnswer = parseInt(quizAnswer.value, 10);
+
+                if (isNaN(userAnswer)) {
+                    showFeedback(false, "Masukkan angka yang valid!");
+                    return;
+                }
+
+                if (userAnswer === currentQuiz.answer) {
+                    showFeedback(
+                        true,
+                        `🎉 Benar! ${currentQuiz.num1} × ${currentQuiz.num2} = ${currentQuiz.answer}`,
+                    );
+                } else {
+                    const hintText =
+                        quizAttempts >= 1
+                            ? `❌ Salah! Jawaban benarnya adalah ${currentQuiz.answer}`
+                            : "❌ Salah! Coba lagi!";
+                    showFeedback(false, hintText);
+                }
+            }
+
+            /* ====== Entity utama ====== */
+            const birdBase = {
+                x: W * 0.28,
+                y: H * 0.45,
+                r: 22,
+                vy: 0,
+                rot: 0,
+            };
+            let bird = { ...birdBase };
+
+            let pipes = []; // {x, gapY, gapH, w, passed}
+            const pipeConf = {
+                w: 96,
+                speed: 230, // px/s
+                spawnEvery: 1.625, // detik (1.25 + 30%)
+                minGap: 240, // 200 + 20%
+                maxGap: 360, // 300 + 20%
+            };
+            let spawnTimer = 0;
+
+            let bgScroll = 0; // untuk parallax
+            let particles = [];
+
+            /* ====== Kontrol fisika ====== */
+            const gravity = 2200; // px/s^2
+            const jumpVel = -700; // px/s
+            const maxVy = 900;
+
+            /* ====== Utilitas ====== */
+            function circleRectCollide(cx, cy, r, rx, ry, rw, rh) {
+                const nx = Math.max(rx, Math.min(cx, rx + rw));
+                const ny = Math.max(ry, Math.min(cy, ry + rh));
+                const dx = cx - nx,
+                    dy = cy - ny;
+                return dx * dx + dy * dy <= r * r;
+            }
+
+            /* ====== Partikel ====== */
+            function spawnParticle(x, y, color, amount = 6, spread = 0.8) {
+                for (let i = 0; i < amount; i++) {
+                    particles.push({
+                        x,
+                        y,
+                        vx: rand(-120, 120) * spread,
+                        vy: rand(-180, -60) * spread,
+                        life: rand(0.25, 0.5),
+                        r: rand(2, 4),
+                        color,
+                    });
+                }
+            }
+
+            /* ====== Reset & Start ====== */
+            function resetGame() {
+                score = 0;
+                pipes.length = 0;
+                spawnTimer = 0;
+                bird = { ...birdBase };
+                bird.vy = 0;
+                bird.rot = 0;
+                bgScroll = 0;
+                particles.length = 0;
+                running = true;
+                started = true;
+                paused = false;
+                gameOver = false;
+                scoreEl.textContent = score;
+                updateHUD();
+            }
+
+            function updateHUD() {
+                bestEl.textContent = best;
+            }
+
+            /* ====== Input ====== */
+            function flap() {
+                if (!started) {
+                    showQuiz();
+                    return;
+                }
+                if (gameOver) return;
+                bird.vy = jumpVel;
+                bird.rot = -0.4;
+                spawnParticle(bird.x - 10, bird.y + 8, "#ffd93d", 8, 1.0);
+                beep("triangle", 940, 0.05, 0.05);
+            }
+
+            function startGame() {
+                enableAudio();
+                startOverlay.classList.remove("show");
+                howOverlay.classList.remove("show");
+                gameOverOverlay.classList.remove("show");
+                hideQuiz();
+                resetGame();
+            }
+
+            function endGame() {
+                gameOver = true;
+                running = false;
+                best = Math.max(best, score);
+                localStorage.setItem("naraflappy_best", String(best));
+                finalScoreEl.textContent = score;
+                finalBestEl.textContent = best;
+                updateHUD();
+                gameOverOverlay.classList.add("show");
+                spawnParticle(bird.x, bird.y, "#ff6b6b", 18, 1.2);
+                beep("sawtooth", 180, 0.14, 0.06);
+                setTimeout(() => beep("sawtooth", 120, 0.18, 0.065), 60);
+            }
+
+            /* ====== Events ====== */
+            canvas.addEventListener("pointerdown", () => flap(), {
+                passive: true,
+            });
+            window.addEventListener("keydown", (e) => {
+                if (e.code === "Space" || e.code === "ArrowUp") {
+                    e.preventDefault();
+                    flap();
+                }
+                if (e.code === "KeyR") {
+                    e.preventDefault();
+                    if (!started) {
+                        showQuiz();
+                    } else {
+                        resetGame();
+                    }
+                }
+                if (e.code === "KeyP") {
+                    e.preventDefault();
+                    if (!started || gameOver) return;
+                    paused = !paused;
+                    if (!paused) last = performance.now();
+                }
+
+                // Quiz events
+                if (quizOverlay.classList.contains("show")) {
+                    if (e.code === "Enter") {
+                        e.preventDefault();
+                        checkAnswer();
+                    }
+                    if (e.code === "Escape") {
+                        e.preventDefault();
+                        startOverlay.classList.add("show");
+                        quizOverlay.classList.remove("show");
+                    }
+                }
+            });
+
+            restartBtn.addEventListener("click", () => {
+                if (!started) {
+                    showQuiz();
+                } else {
+                    resetGame();
+                }
+            });
+            startBtn.addEventListener("click", () => showQuiz());
+            howBtn.addEventListener("click", () => {
+                howOverlay.classList.add("show");
+            });
+            backBtn.addEventListener("click", () => {
+                howOverlay.classList.remove("show");
+            });
+            playAgainBtn.addEventListener("click", () => {
+                showQuiz();
+            });
+
+            // Quiz events
+            submitAnswerBtn.addEventListener("click", checkAnswer);
+            skipQuizBtn.addEventListener("click", () => {
+                startOverlay.classList.add("show");
+                quizOverlay.classList.remove("show");
+            });
+
+            quizAnswer.addEventListener("keypress", (e) => {
+                if (e.key === "Enter") {
+                    e.preventDefault();
+                    checkAnswer();
+                }
+            });
+
+            /* ====== Update ====== */
+            function update(dt) {
+                if (!running || paused) return;
+
+                // background scroll
+                bgScroll += pipeConf.speed * 0.25 * dt;
+
+                // bird physics
+                bird.vy = clamp(bird.vy + gravity * dt, -Infinity, maxVy);
+                bird.y += bird.vy * dt;
+                bird.rot = clamp(
+                    bird.rot + (bird.vy > 0 ? 1 : 0.6) * dt,
+                    -0.6,
+                    0.9,
+                );
+
+                // bound top
+                if (bird.y - bird.r < 0) {
+                    bird.y = bird.r;
+                    bird.vy = 0;
+                }
+
+                // spawn pipes
+                spawnTimer += dt;
+                const desired = pipeConf.spawnEvery;
+                if (spawnTimer >= desired) {
+                    spawnTimer = 0;
+                    const difficulty = clamp(1 - score / 60, 0.5, 1); // semakin tinggi skor, gap mengecil
+                    const gapH = clamp(
+                        pipeConf.maxGap * difficulty,
+                        pipeConf.minGap,
+                        pipeConf.maxGap,
+                    );
+                    const margin = 100;
+                    const gapY = rand(margin, H - GROUND_H - margin - gapH);
+                    pipes.push({
+                        x: W + 20,
+                        gapY,
+                        gapH,
+                        w: pipeConf.w,
+                        passed: false,
+                    });
+                }
+
+                // move pipes & check pass
+                for (let i = 0; i < pipes.length; i++) {
+                    const p = pipes[i];
+                    p.x -= pipeConf.speed * dt;
+                    if (!p.passed && p.x + p.w < bird.x - bird.r) {
+                        p.passed = true;
+                        score++;
+                        scoreEl.textContent = score;
+                        beep("square", 880, 0.05, 0.05);
+                    }
+                }
+                // remove offscreen
+                pipes = pipes.filter((p) => p.x + p.w > -40);
+
+                // collisions with ground
+                if (bird.y + bird.r > H - GROUND_H) {
+                    bird.y = H - GROUND_H - bird.r;
+                    endGame();
+                }
+
+                // collisions with pipes
+                for (const p of pipes) {
+                    const topRect = { x: p.x, y: 0, w: p.w, h: p.gapY };
+                    const botRect = {
+                        x: p.x,
+                        y: p.gapY + p.gapH,
+                        w: p.w,
+                        h: H - GROUND_H - (p.gapY + p.gapH),
+                    };
+                    if (
+                        circleRectCollide(
+                            bird.x,
+                            bird.y,
+                            bird.r,
+                            topRect.x,
+                            topRect.y,
+                            topRect.w,
+                            topRect.h,
+                        ) ||
+                        circleRectCollide(
+                            bird.x,
+                            bird.y,
+                            bird.r,
+                            botRect.x,
+                            botRect.y,
+                            botRect.w,
+                            botRect.h,
+                        )
+                    ) {
+                        endGame();
+                        break;
+                    }
+                }
+
+                // update particles
+                for (const prt of particles) {
+                    prt.vy += 900 * dt;
+                    prt.x += prt.vx * dt;
+                    prt.y += prt.vy * dt;
+                    prt.life -= dt;
+                }
+                particles = particles.filter((p) => p.life > 0);
+            }
+
+            /* ====== Render ====== */
+            function drawBackground() {
+                // langit dengan gradien oranye-merah
+                const grad = ctx.createLinearGradient(0, 0, 0, H);
+                grad.addColorStop(0, "#ff6b6b");
+                grad.addColorStop(0.6, "#ffd93d");
+                grad.addColorStop(1, "#eea849");
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, W, H);
+
+                // awan oranye krem
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = "#ffecb3";
+                for (let i = 0; i < 6; i++) {
+                    const x = i * 220 - ((bgScroll * 0.3) % (W + 220)) - 100;
+                    const y = 160 + Math.sin(i * 0.7 + bgScroll * 0.001) * 40;
+                    ctx.beginPath();
+                    ctx.ellipse(x, y, 160, 60, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                // tanah coklat
+                ctx.fillStyle = "#8b7355";
+                ctx.fillRect(0, H - GROUND_H, W, GROUND_H);
+                // pola tanah
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = "#6b5537";
+                for (let i = 0; i < W; i += 24) {
+                    const h = 6 + 4 * Math.sin(i * 0.1 + bgScroll * 0.06);
+                    ctx.fillRect(i, H - GROUND_H, 16, h);
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            function drawPipes() {
+                for (const p of pipes) {
+                    const radius = 14;
+
+                    // pipa hijau
+                    ctx.fillStyle = "#22c55e";
+                    roundRect(p.x, 0, p.w, p.gapY, radius);
+                    const grad1 = ctx.createLinearGradient(
+                        p.x,
+                        0,
+                        p.x + p.w,
+                        0,
+                    );
+                    grad1.addColorStop(0, "#22c55e");
+                    grad1.addColorStop(1, "#16a34a");
+                    ctx.fillStyle = grad1;
+                    ctx.fill();
+
+                    // mulut pipa atas
+                    ctx.fillStyle = "rgba(0,0,0,0.2)";
+                    roundRect(p.x - 2, p.gapY - 24, p.w + 4, 24, 10);
+                    ctx.fill();
+
+                    // pipa bawah
+                    roundRect(
+                        p.x,
+                        p.gapY + p.gapH,
+                        p.w,
+                        H - GROUND_H - (p.gapY + p.gapH),
+                        radius,
+                    );
+                    const grad2 = ctx.createLinearGradient(
+                        p.x,
+                        0,
+                        p.x + p.w,
+                        0,
+                    );
+                    grad2.addColorStop(0, "#22c55e");
+                    grad2.addColorStop(1, "#16a34a");
+                    ctx.fillStyle = grad2;
+                    ctx.fill();
+
+                    // mulut pipa bawah
+                    ctx.fillStyle = "rgba(0,0,0,0.2)";
+                    roundRect(p.x - 2, p.gapY + p.gapH, p.w + 4, 24, 10);
+                    ctx.fill();
+                }
+            }
+
+            function roundRect(x, y, w, h, r) {
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.lineTo(x + w - r, y);
+                ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+                ctx.lineTo(x + w, y + h - r);
+                ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+                ctx.lineTo(x + r, y + h);
+                ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+                ctx.lineTo(x, y + r);
+                ctx.quadraticCurveTo(x, y, x + r, y);
+                ctx.closePath();
+            }
+
+            function drawBird() {
+                ctx.save();
+                ctx.translate(bird.x, bird.y);
+                ctx.rotate(bird.rot);
+
+                // badan burung oranye-kuning
+                const grad = ctx.createLinearGradient(-20, -20, 20, 20);
+                grad.addColorStop(0, "#ff8c42");
+                grad.addColorStop(1, "#ffd93d");
+                ctx.fillStyle = grad;
+                roundCapsule(-26, -18, 52, 36, 18);
+                ctx.fill();
+
+                // sayap
+                ctx.save();
+                const flap =
+                    Math.sin(performance.now() * 0.02) *
+                    (paused || gameOver ? 0 : 1);
+                ctx.translate(-6, -6 + flap * 1.5);
+                ctx.rotate(-0.1);
+                ctx.fillStyle = "rgba(255,255,255,0.75)";
+                roundCapsule(-12, -6, 24, 12, 6);
+                ctx.fill();
+                ctx.restore();
+
+                // mata
+                ctx.fillStyle = "#fff";
+                ctx.beginPath();
+                ctx.arc(10, -6, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = "#0b1020";
+                ctx.beginPath();
+                ctx.arc(12, -6, 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // paruh oranye
+                ctx.fillStyle = "#ff6b6b";
+                ctx.beginPath();
+                ctx.moveTo(24, 0);
+                ctx.lineTo(36, 4);
+                ctx.lineTo(24, 8);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+
+            function roundCapsule(x, y, w, h, r) {
+                const rr = Math.min(r, Math.min(w, h) / 2);
+                ctx.beginPath();
+                ctx.moveTo(x + rr, y);
+                ctx.lineTo(x + w - rr, y);
+                ctx.arc(x + w - rr, y + rr, rr, -Math.PI / 2, 0);
+                ctx.lineTo(x + w, y + h - rr);
+                ctx.arc(x + w - rr, y + h - rr, rr, 0, Math.PI / 2);
+                ctx.lineTo(x + rr, y + h);
+                ctx.arc(x + rr, y + h - rr, rr, Math.PI / 2, Math.PI);
+                ctx.lineTo(x, y + rr);
+                ctx.arc(x + rr, y + rr, rr, Math.PI, Math.PI * 1.5);
+                ctx.closePath();
+            }
+
+            function drawParticles() {
+                for (const prt of particles) {
+                    ctx.globalAlpha = Math.max(0, prt.life * 2);
+                    ctx.fillStyle = prt.color;
+                    ctx.beginPath();
+                    ctx.arc(prt.x, prt.y, prt.r, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            function drawUI() {
+                // bayangan skor di kanvas (opsional, HUD html sudah ada)
+                // dibiarkan minimal agar tidak menabrak HUD
+            }
+
+            /* ====== Loop ====== */
+            function loop(now) {
+                const dt = Math.min(0.032, (now - last) / 1000);
+                last = now;
+
+                // selalu redraw agar overlay halus
+                drawBackground();
+                drawPipes();
+                drawParticles();
+                drawBird();
+                drawUI();
+
+                if (running && !paused) update(dt);
+
+                requestAnimationFrame(loop);
+            }
+            requestAnimationFrame(loop);
+
+            // Fokus pertama ke overlay start
+            startOverlay.classList.add("show");
+        </script>
+    </body>
+</html>
